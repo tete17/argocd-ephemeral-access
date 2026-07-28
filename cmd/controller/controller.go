@@ -178,13 +178,15 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 // initPlugin will initialize the AccessRequester plugin from the binary
-// provided in the given path.
-func initPlugin(path string, logger *zap.Logger) (plugin.AccessRequester, error) {
+// provided in the given path. The given zap logger is wrapped to build the host
+// side logger that relays the plugin subprocess logs into the controller's log
+// stream, keeping their format consistent with the controller's own logs.
+func initPlugin(path string, zaplogger *zap.Logger) (plugin.AccessRequester, error) {
 	setupLog.Info("Initializing AccessRequester plugin...", "path", path)
 
-	pluginLog, err := log.NewPluginLogger(logger)
+	pluginLog, err := log.NewPluginHostLogger(zaplogger)
 	if err != nil {
-		return nil, fmt.Errorf("error building plugin logger: %w", err)
+		return nil, fmt.Errorf("error building plugin host logger: %w", err)
 	}
 	cliConfig := plugin.NewClientConfig(path, pluginLog)
 	client := goPlugin.NewClient(cliConfig)
